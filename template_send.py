@@ -10,7 +10,7 @@ to_whatsapp_number = 'whatsapp:' + os.getenv('ANNALISA_NUMBER')
 
 # Use your approved template
 client.messages.create(
-    content_sid=os.getenv("DIET_PREF_SID"),
+    content_sid=os.getenv("CARD_TEMPLATE"),
     from_=from_whatsapp_number,
     to=to_whatsapp_number,
 )
