@@ -93,26 +93,3 @@ def handle_options(user_id, user_message):
 
         print(f"Just Save My List")
         # Send Message that says "List was saved" from the templates
-
-def manage_preferences(user_id, user_message):
-    """
-    Handle user response to options after finalizing the list.
-    """
-    normalized_message = user_message.strip().lower()
-
-    # Debugging: Print the received option
-    print(f"User {user_id} selected option: '{normalized_message}'")
-
-    if normalized_message == "add/remove item":
-        # Logic to handle adding/removing items
-        print(f"Add Remove Item")
-
-    elif normalized_message == "get recommendations":
-        print(f"Get Recommendations")
-        
-        # Here you will want to now set the handle_options to false, and then call then send a new whatsapp_message for the recommendation.
-
-    elif normalized_message == "just save my list":
-
-        print(f"Just Save My List")
-        # Send Message that says "List was saved" from the templates
