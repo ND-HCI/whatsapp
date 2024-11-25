@@ -20,7 +20,7 @@ content_variables = {
     "7": "Saturated Fat",
     "8": "saturated_fat",
     "9": "saturated_fat",
-    "10": "Sodium",
+    "10": "*Sodium",
     "11": "sodium",
     "12": "sodium",
     "13": "Im done",
