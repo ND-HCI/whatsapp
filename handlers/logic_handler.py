@@ -3,7 +3,6 @@ import time
 import json
 from utils.twilio_utils import send_whatsapp_message
 from utils.template_config import TEMPLATE_CONTENT_VARIABLES
-from utils.helper_functions import update_dietary_goals_list  # Import the function
 
 # Dictionary to track user state
 USER_SESSIONS = {}
