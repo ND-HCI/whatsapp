@@ -17,6 +17,14 @@ TEMPLATE_CONTENT_VARIABLES = {
     })
 }
 
+# PRODUCTS {
+#     "product1": json.dumps({
+#         "1": "Apples",
+#         "2": "Price",
+#         "3": "URL_Image"
+#     }
+# }
+
 TEMPLATE_IDS = {
     "basic_template": "TEST2_SID_Template",
     "variable_template": "VARIABLE_TEST2"

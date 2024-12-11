@@ -85,7 +85,6 @@ def handle_options(user_id, user_message):
 
     elif normalized_message == "get recommendations":
         print(f"Get Recommendations")
-        
         # Here you will want to now set the handle_options to false, and then call then send a new whatsapp_message for the recommendation.
 
     elif normalized_message == "just save my list":
