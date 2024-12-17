@@ -100,8 +100,16 @@ def handle_options(user_id, user_message):
 
 
    if normalized_message == "add/remove item":
-       # Logic to handle adding/removing items
-       print(f"Add Remove Item")
+        # Logic to handle adding/removing items
+        # Inform the user about list modification mode
+        send_whatsapp_message(os.getenv("LIST_MODIFICATION_MODE"), user_id)
+        
+        # Switch user back to list building mode
+        USER_SESSIONS[user_id]["awaiting_list"] = True
+        USER_SESSIONS[user_id]["awaiting_options"] = False
+
+        current_items = USER_SESSIONS[user_id]["list_items"]
+        send_whatsapp_message(f"Current items: {', '.join(current_items)}", user_id)
 
 
    elif normalized_message == "get recommendations":
@@ -135,7 +143,15 @@ def handle_options(user_id, user_message):
 
 
    elif normalized_message == "just save my list":
+        user_list = USER_SESSIONS[user_id]["list_items"]
+        print(f"Saving list for user {user_id}: {user_list}")
 
+        #Send confirmation message using the Twilio template
+        send_whatsapp_message(os.getenv("CONFIRMATION_SAVE_LIST"), user_id)
 
-       print(f"Just Save My List")
-       # Send Message that says "List was saved" from the templates
+        #Reset session or conclude the conversation
+        USER_SESSIONS[user_id]["awaiting_options"] = False
+        USER_SESSIONS[user_id]["awaiting_list"] = False
+        USER_SESSIONS[user_id]["list_items"] = []  # Reset if you want a fresh start for next session
+        send_whatsapp_message("Thank you! If you need further assistance, type 'start'.", user_id)
+        #Send Message that says "List was saved" from the templates
