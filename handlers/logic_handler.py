@@ -127,14 +127,15 @@ def handle_options(user_id, user_message):
        product_row = next((p for p in PRODUCTS if p["Name"].lower() == product_name), None)
 
        # get item url
+       image_link = product_row["Image"]
        product_link = product_row["Link"]
 
        # remove beginning of the url
-       match = re.search(r"https://www\.walmart\.com/ip/([^/]+)", product_link)
+       match = re.search(r"https://i5\.walmartimages\.com/([^/]+)", image_link)
        if match:
           product_id = match.group(1)  # Get the captured product ID
           print(f"Extracted product ID: {product_id}")
-          content_variables = json.dumps({"{item}": product_id})
+          content_variables = json.dumps({"{{1}}": product_id, "{{2}}": product_link, "{{3}}": image_link})
           # Send the WhatsApp message
           send_whatsapp_message(os.getenv("GET_RECS"), user_id, content_variables)
        
