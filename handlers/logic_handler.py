@@ -17,7 +17,6 @@ def handle_user_message(user_id, user_message):
        initialize_user_session(user_id)
        return
 
-
    if USER_SESSIONS[user_id]["awaiting_list"]:
        handle_list_building(user_id, user_message)
        return
