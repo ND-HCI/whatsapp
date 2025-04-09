@@ -15,8 +15,20 @@ def initialize_user_session(user_id):
    send_whatsapp_message(os.getenv("WELCOME_MESSAGE"), user_id)
    time.sleep(2)  # Pause for 2 seconds
 
+   five_less_of_content_variables = {
+    "1": "Added Sugars",
+    "2": "added_sugars",
+    "3": "Animal Meats",
+    "4": "animal_meats",
+    "5": "Saturated Fat",
+    "6": "saturated_fat",
+    "7": "Sodium",
+    "8": "sodium"
+    }
+
    # Send the build list message
-   send_whatsapp_message(os.getenv("BUILD_LIST"), user_id)
+   send_whatsapp_message(os.getenv("LESS_OF_5"), user_id, five_less_of_content_variables)
+#    send_whatsapp_message(os.getenv("BUILD_LIST"), user_id)
 
 
    # Initialize session data
