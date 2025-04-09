@@ -19,5 +19,5 @@ def send_whatsapp_message(content_sid, recipient, content_variables=None):
         content_sid=content_sid,
         from_=from_whatsapp_number,
         to=to_whatsapp_number,
-        content_variables=json.dumps(content_variables)
+        content_variables=content_variables
         )

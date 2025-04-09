@@ -25,6 +25,11 @@ def initialize_user_session(user_id):
     "7": "Sodium",
     "8": "sodium"
     }
+   
+   print(five_less_of_content_variables)
+
+   five_less_of_content_variables = json.dumps(five_less_of_content_variables)
+   print(five_less_of_content_variables)
 
    # Send the build list message
    send_whatsapp_message(os.getenv("LESS_OF_5"), user_id, five_less_of_content_variables)
