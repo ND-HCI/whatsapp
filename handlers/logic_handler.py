@@ -9,6 +9,37 @@ from utils.load_excel import PRODUCTS
 # Dictionary to track user state
 USER_SESSIONS = {}
 
+def initialize_user_session(user_id):
+   """Initialize a new user session and send welcome/build list message."""
+   # Send the welcome message
+   send_whatsapp_message(os.getenv("WELCOME_MESSAGE"), user_id)
+   time.sleep(2)  # Pause for 2 seconds
+
+   # Send the build list message
+   send_whatsapp_message(os.getenv("BUILD_LIST"), user_id)
+
+
+   # Initialize session data
+   USER_SESSIONS[user_id] = {
+        "list_items": [],                # Store list items
+        "awaiting_list": True,          # Track whether user is entering list items
+        "awaiting_options": False, 
+        "get_recs": False,
+        "add_remove_list": False, 
+        "remove_items": False, 
+        "add_items": False,
+        "less_of_dietary_preferences": {
+            "remaining": ["Sodium", "Saturated Fat", "Added Sugars", "Animal Proteins"],
+            "selected": [],
+            "in_progress": False
+        },
+        "more_of_dietary_preferences": {
+            "remaining": ["Fruits", "Vegetables", "Fish", "Whole Grains", "Plant Proteins"],
+            "selected": [],
+            "in_progress": False
+        }
+    }
+
 
 def handle_user_message(user_id, user_message):
    user_message = user_message.strip()  # Clean up input
@@ -37,29 +68,21 @@ def handle_user_message(user_id, user_message):
        handle_remove_items(user_id, user_message)
        return
 
-def initialize_user_session(user_id):
-   """Initialize a new user session and send welcome/build list message."""
-   # Send the welcome message
-   send_whatsapp_message(os.getenv("WELCOME_MESSAGE"), user_id)
-   time.sleep(2)  # Pause for 2 seconds
-
-
-   # Send the build list message
-   send_whatsapp_message(os.getenv("BUILD_LIST"), user_id)
-
-
-   # Initialize session data
-   USER_SESSIONS[user_id] = {
-       "list_items": [],  # Store list items
-       "awaiting_list": True,  # Track whether user is entering list items
-       "awaiting_options": False, 
-       "get_recs": False,
-       "add_remove_list": False, 
-       "remove_items": False, 
-       "add_items": False
-   }
-
 # -------------------------------------------------------------------------------------------------------------
+
+def collect_dietary_info(user_id, user_message):
+   """
+   Send user the dietary goals options and have them respond.
+   Create function that will 
+   """
+
+
+def modify_dietary_info(user_id, user_message):
+   """
+   Send user the dietary goals options and have them respond.
+   Create function that will 
+   """
+
 
 def handle_list_building(user_id, user_message):
    """
@@ -265,3 +288,4 @@ def handle_remove_items(user_id, user_message):
         else:
             print("Not in list")
             #We need a message here if it's not found in the list
+
