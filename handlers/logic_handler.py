@@ -14,32 +14,28 @@ def initialize_user_session(user_id):
    # Send the welcome message
    send_whatsapp_message(os.getenv("WELCOME_MESSAGE"), user_id)
    time.sleep(2)  # Pause for 2 seconds
-
-   five_less_of_content_variables = {
-    "1": "Added Sugars",
-    "2": "added_sugars",
-    "3": "Animal Meats",
-    "4": "animal_meats",
-    "5": "Saturated Fat",
-    "6": "saturated_fat",
-    "7": "Sodium",
-    "8": "sodium"
-    }
-   
-   print(five_less_of_content_variables)
-
-   five_less_of_content_variables = json.dumps(five_less_of_content_variables)
-   print(five_less_of_content_variables)
+   content_variables = json.dumps({
+        "1": "Sodium",
+        "2": "sodium",
+        "3": "Added Sugars",
+        "4": "added sugars",
+        "5": "Saturated Fats",
+        "6": "saturated fats",
+        "7": "Animal Proteins",
+        "8": "animal proteins",
+        "9": "Done",
+        "10": "done"
+    })  # “4”: “Stuff”,
 
    # Send the build list message
-   send_whatsapp_message(os.getenv("LESS_OF_5"), user_id, five_less_of_content_variables)
+   send_whatsapp_message(os.getenv("list_selector_5_dietary_goals"), user_id, content_variables)
 #    send_whatsapp_message(os.getenv("BUILD_LIST"), user_id)
 
 
    # Initialize session data
    USER_SESSIONS[user_id] = {
         "list_items": [],                # Store list items
-        "awaiting_list": True,          # Track whether user is entering list items
+        "awaiting_list": False,          # Track whether user is entering list items
         "awaiting_options": False, 
         "get_recs": False,
         "add_remove_list": False, 
@@ -48,7 +44,7 @@ def initialize_user_session(user_id):
         "less_of_dietary_preferences": {
             "remaining": ["Sodium", "Saturated Fat", "Added Sugars", "Animal Proteins"],
             "selected": [],
-            "in_progress": False
+            "in_progress": True
         },
         "more_of_dietary_preferences": {
             "remaining": ["Fruits", "Vegetables", "Fish", "Whole Grains", "Plant Proteins"],
@@ -63,6 +59,10 @@ def handle_user_message(user_id, user_message):
   
    if user_id not in USER_SESSIONS:
        initialize_user_session(user_id)
+       return
+
+   if USER_SESSIONS[user_id]["less_of_dietary_preferences"]:
+       collect_dietary_info(user_id, user_message)
        return
 
    if USER_SESSIONS[user_id]["awaiting_list"]:

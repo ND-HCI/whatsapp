@@ -2,7 +2,7 @@ import json
 
 TEMPLATE_CONTENT_VARIABLES = {
     "dietary_goals_get_less_full": json.dumps({
-        "1": "Added Sugars",
+        "1": "Hi! How are you?",
         "2": "added_sugars",
         "3": "added_sugars",
         "4": "Animal Meats",

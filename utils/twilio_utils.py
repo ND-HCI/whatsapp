@@ -14,6 +14,7 @@ def send_whatsapp_message(content_sid, recipient, content_variables=None):
 
     print("Sending WhatsApp message:")
     print(f"To: {to_whatsapp_number}")
+    print(f"Template name: {content_sid}")
 
     client.messages.create(
         content_sid=content_sid,
