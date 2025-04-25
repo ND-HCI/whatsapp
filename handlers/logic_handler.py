@@ -3,46 +3,26 @@ import time
 import json
 import re
 from utils.twilio_utils import send_whatsapp_message
-from utils.template_config import TEMPLATE_CONTENT_VARIABLES
 from utils.load_excel import PRODUCTS
 
 # Dictionary to track user state
 USER_SESSIONS = {}
 
 def initialize_user_session(user_id):
-   """Initialize a new user session and send welcome/build list message."""
-   # Send the welcome message
-   send_whatsapp_message(os.getenv("WELCOME_MESSAGE"), user_id)
-   time.sleep(2)  # Pause for 2 seconds
-   content_variables = json.dumps({
-        "1": "Sodium",
-        "2": "sodium",
-        "3": "Added Sugars",
-        "4": "added sugars",
-        "5": "Saturated Fats",
-        "6": "saturated fats",
-        "7": "Animal Proteins",
-        "8": "animal proteins",
-        "9": "Done",
-        "10": "done"
-    })  # “4”: “Stuff”,
+    """Initialize a new user session and send welcome/build list message."""
+    send_whatsapp_message(os.getenv("WELCOME_MESSAGE"), user_id)
+    time.sleep(2)  # Pause for 2 seconds
 
-   # Send the build list message
-   send_whatsapp_message(os.getenv("list_selector_5_dietary_goals"), user_id, content_variables)
-#    send_whatsapp_message(os.getenv("BUILD_LIST"), user_id)
-
-
-   # Initialize session data
-   USER_SESSIONS[user_id] = {
-        "list_items": [],                # Store list items
-        "awaiting_list": False,          # Track whether user is entering list items
-        "awaiting_options": False, 
+    USER_SESSIONS[user_id] = {
+        "list_items": [],
+        "awaiting_list": False,
+        "awaiting_options": False,
         "get_recs": False,
-        "add_remove_list": False, 
-        "remove_items": False, 
+        "add_remove_list": False,
+        "remove_items": False,
         "add_items": False,
         "less_of_dietary_preferences": {
-            "remaining": ["Sodium", "Saturated Fat", "Added Sugars", "Animal Proteins"],
+            "remaining": ["Sodium", "Saturated Fats", "Added Sugars", "Animal Proteins"],
             "selected": [],
             "in_progress": True
         },
@@ -53,6 +33,8 @@ def initialize_user_session(user_id):
         }
     }
 
+    # Now separately send the dietary goals
+    send_dietary_options(user_id)
 
 def handle_user_message(user_id, user_message):
    user_message = user_message.strip()  # Clean up input
@@ -87,12 +69,77 @@ def handle_user_message(user_id, user_message):
 
 # -------------------------------------------------------------------------------------------------------------
 
-def collect_dietary_info(user_id, user_message):
-   """
-   Send user the dietary goals options and have them respond.
-   Create function that will 
-   """
+def send_dietary_options(user_id):
+    """Send updated dietary options to the user based on how many total choices (options + Done)."""
+    session = USER_SESSIONS[user_id]
+    remaining_options = session["less_of_dietary_preferences"]["remaining"]
+    num_choices = len(remaining_options) + 1  # +1 for 'Done'
 
+    if len(remaining_options) <= 1:
+        # If 1 or fewer real options left, skip and move on
+        session["less_of_dietary_preferences"]["in_progress"] = False
+        session["awaiting_list"] = True
+        send_whatsapp_message(os.getenv("BUILD_LIST"), user_id)
+        return
+
+    # Build content variables
+    content_variables = {}
+    for idx, option in enumerate(remaining_options, start=1):
+        content_variables[str(idx * 2 - 1)] = option
+        content_variables[str(idx * 2)] = option.lower()
+
+    # Always add Done at the end
+    next_index = len(content_variables) + 1
+    content_variables[str(next_index)] = "Done"
+    content_variables[str(next_index + 1)] = "done"
+
+    content_variables_json = json.dumps(content_variables)
+
+    # Choose template based on TOTAL choices (real options + Done)
+    if num_choices == 5:
+        template_id = os.getenv("list_selector_5_dietary_goals")  # 5 options + Done
+    elif num_choices == 4:
+        template_id = os.getenv("list_selector_4_dietary_goals")  # 4 options + Done
+    elif num_choices == 3:
+        template_id = os.getenv("list_selector_3_dietary_goals")  # 3 options + Done
+    elif num_choices == 2:
+        template_id = os.getenv("list_selector_2_dietary_goals")  # 2 options + Done
+    else:
+        template_id = os.getenv("list_selector_2_dietary_goals")  # fallback safety
+
+    print(content_variables_json)
+    print(f"Template chosen: {template_id}")
+
+    send_whatsapp_message(template_id, user_id, content_variables_json)
+
+def collect_dietary_info(user_id, user_message):
+    """Handle user input during dietary preferences selection."""
+    normalized_message = user_message.strip().lower()
+
+    session = USER_SESSIONS[user_id]
+    remaining = session["less_of_dietary_preferences"]["remaining"]
+    selected = session["less_of_dietary_preferences"]["selected"]
+
+    # FIRST: check if user typed 'done'
+    if normalized_message == "done":
+        session["less_of_dietary_preferences"]["in_progress"] = False
+        session["more_of_dietary_preferences"]["in_progress"] = True
+        return
+
+    # THEN: check if they picked an available option
+    match = None
+    for option in remaining:
+        if normalized_message == option.lower():
+            match = option
+            break
+
+    if match:
+        selected.append(match)
+        remaining.remove(match)
+
+        print(f"User {user_id} selected '{match}'. Remaining options: {remaining}")
+
+        send_dietary_options(user_id)  # Resend updated options if needed
 
 def modify_dietary_info(user_id, user_message):
    """
@@ -107,9 +154,7 @@ def handle_list_building(user_id, user_message):
    Manage adding items to the list or finalizing the list.
    """
 
-
    normalized_message = user_message.strip().lower().replace("’", "'")  # Replace curly with straight apostrophe
-
 
    # Debugging: Print the normalized message to verify input
    print(f"Received message from user {user_id}: '{normalized_message}'")
@@ -121,10 +166,8 @@ def handle_list_building(user_id, user_message):
        USER_SESSIONS[user_id]["awaiting_options"] = True  # Transition to options state
        user_list = USER_SESSIONS[user_id]["list_items"]
 
-
        # Process the list (e.g., save to a database or perform actions)
        print(f"Processing list for user {user_id}: {user_list}")
-
 
        # Send a confirmation message
        send_whatsapp_message(os.getenv("DONE_LIST"), user_id)
