@@ -11,7 +11,7 @@ USER_SESSIONS = {}
 def initialize_user_session(user_id):
     """Initialize a new user session and send welcome/build list message."""
     send_whatsapp_message(os.getenv("WELCOME_MESSAGE"), user_id)
-    time.sleep(2)  # Pause for 2 seconds
+    time.sleep(4)  # Pause for 4 seconds instead of 2 seconds because lots of info to send
 
     USER_SESSIONS[user_id] = {
         "list_items": [],
@@ -34,52 +34,56 @@ def initialize_user_session(user_id):
     }
 
     # Now separately send the dietary goals
-    send_dietary_options(user_id)
+    send_dietary_options_less_of(user_id)
 
 def handle_user_message(user_id, user_message):
-   user_message = user_message.strip()  # Clean up input
-  
-   if user_id not in USER_SESSIONS:
-       initialize_user_session(user_id)
-       return
+    user_message = user_message.strip()  # Clean up input
+    
+    if user_id not in USER_SESSIONS:
+        initialize_user_session(user_id)
+        return
 
-   if USER_SESSIONS[user_id]["less_of_dietary_preferences"]:
-       collect_dietary_info(user_id, user_message)
-       return
+    if USER_SESSIONS[user_id]["less_of_dietary_preferences"]["in_progress"]:
+        collect_dietary_info_less_of(user_id, user_message)
+        return
 
-   if USER_SESSIONS[user_id]["awaiting_list"]:
-       handle_list_building(user_id, user_message)
-       return
-  
-   if USER_SESSIONS[user_id]["awaiting_options"]:
-       handle_options(user_id, user_message)
-       return
-   
-   if USER_SESSIONS[user_id]["add_remove_list"]:
-       handle_list_modification(user_id, user_message)
-       return
-   
-   if USER_SESSIONS[user_id]["remove_items"]: 
-       handle_add_items(user_id, user_message)
-       return
-       
-   if USER_SESSIONS[user_id]["add_items"]: 
-       handle_remove_items(user_id, user_message)
-       return
+    if USER_SESSIONS[user_id]["more_of_dietary_preferences"]["in_progress"]:
+        collect_dietary_info_more_of(user_id, user_message)
+        return
+
+    if USER_SESSIONS[user_id]["awaiting_list"]:
+        handle_list_building(user_id, user_message)
+        return
+
+    if USER_SESSIONS[user_id]["awaiting_options"]:
+        handle_options(user_id, user_message)
+        return
+
+    if USER_SESSIONS[user_id]["add_remove_list"]:
+        handle_list_modification(user_id, user_message)
+        return
+
+    if USER_SESSIONS[user_id]["remove_items"]: 
+        handle_add_items(user_id, user_message)
+        return
+        
+    if USER_SESSIONS[user_id]["add_items"]: 
+        handle_remove_items(user_id, user_message)
+        return
 
 # -------------------------------------------------------------------------------------------------------------
 
-def send_dietary_options(user_id):
+def send_dietary_options_less_of(user_id):
     """Send updated dietary options to the user based on how many total choices (options + Done)."""
     session = USER_SESSIONS[user_id]
     remaining_options = session["less_of_dietary_preferences"]["remaining"]
     num_choices = len(remaining_options) + 1  # +1 for 'Done'
 
-    if len(remaining_options) <= 1:
+    if (len(remaining_options) + 1) <= 1:
         # If 1 or fewer real options left, skip and move on
         session["less_of_dietary_preferences"]["in_progress"] = False
-        session["awaiting_list"] = True
-        send_whatsapp_message(os.getenv("BUILD_LIST"), user_id)
+        session["more_of_dietary_preferences"]["in_progress"] = True
+        send_dietary_options_more_of(user_id)
         return
 
     # Build content variables
@@ -112,7 +116,7 @@ def send_dietary_options(user_id):
 
     send_whatsapp_message(template_id, user_id, content_variables_json)
 
-def collect_dietary_info(user_id, user_message):
+def collect_dietary_info_less_of(user_id, user_message):
     """Handle user input during dietary preferences selection."""
     normalized_message = user_message.strip().lower()
 
@@ -124,6 +128,7 @@ def collect_dietary_info(user_id, user_message):
     if normalized_message == "done":
         session["less_of_dietary_preferences"]["in_progress"] = False
         session["more_of_dietary_preferences"]["in_progress"] = True
+        send_dietary_options_more_of(user_id)
         return
 
     # THEN: check if they picked an available option
@@ -139,7 +144,82 @@ def collect_dietary_info(user_id, user_message):
 
         print(f"User {user_id} selected '{match}'. Remaining options: {remaining}")
 
-        send_dietary_options(user_id)  # Resend updated options if needed
+        send_dietary_options_less_of(user_id)  # Resend updated options if needed
+
+def send_dietary_options_more_of(user_id): # more of function
+    """Send updated dietary options to the user based on how many total choices (options + Done)."""
+    session = USER_SESSIONS[user_id]
+    remaining_options = session["more_of_dietary_preferences"]["remaining"]
+    num_choices = len(remaining_options) + 1  # +1 for 'Done'
+
+    if (len(remaining_options) + 1) <= 1:
+        # If 1 or fewer real options left, skip and move on
+        session["more_of_dietary_preferences"]["in_progress"] = False
+        session["awaiting_list"] = True
+        send_whatsapp_message(os.getenv("BUILD_LIST"), user_id)
+        return
+
+    # Build content variables
+    content_variables = {}
+    for idx, option in enumerate(remaining_options, start=1):
+        content_variables[str(idx * 2 - 1)] = option
+        content_variables[str(idx * 2)] = option.lower()
+
+    # Always add Done at the end
+    next_index = len(content_variables) + 1
+    content_variables[str(next_index)] = "Done"
+    content_variables[str(next_index + 1)] = "done"
+
+    content_variables_json = json.dumps(content_variables)
+
+    # Choose template based on TOTAL choices (real options + Done)
+    if num_choices == 6:
+        template_id = os.getenv("6_dietary_goals_more_of")  # 5 options + Done
+    elif num_choices == 5:
+        template_id = os.getenv("5_dietary_goals_more_of")  # 4 options + Done
+    elif num_choices == 4:
+        template_id = os.getenv("4_dietary_goals_more_of")  # 4 options + Done
+    elif num_choices == 3:
+        template_id = os.getenv("3_dietary_goals_more_of")  # 3 options + Done
+    elif num_choices == 2:
+        template_id = os.getenv("2_dietary_goals_more_of")  # 2 options + Done
+    else:
+        template_id = os.getenv("2_dietary_goals_more_of")  # fallback safety
+
+    print(content_variables_json)
+    print(f"Template chosen: {template_id}")
+
+    send_whatsapp_message(template_id, user_id, content_variables_json)
+
+def collect_dietary_info_more_of(user_id, user_message):
+    """Handle user input during dietary preferences selection."""
+    normalized_message = user_message.strip().lower()
+
+    session = USER_SESSIONS[user_id]
+    remaining = session["more_of_dietary_preferences"]["remaining"]
+    selected = session["more_of_dietary_preferences"]["selected"]
+
+    # FIRST: check if user typed 'done'
+    if normalized_message == "done":
+        session["more_of_dietary_preferences"]["in_progress"] = False
+        session["awaiting_list"] = True
+        send_whatsapp_message(os.getenv("BUILD_LIST"), user_id)
+        return
+
+    # THEN: check if they picked an available option
+    match = None
+    for option in remaining:
+        if normalized_message == option.lower():
+            match = option
+            break
+
+    if match:
+        selected.append(match)
+        remaining.remove(match)
+
+        print(f"User {user_id} selected '{match}'. Remaining options: {remaining}")
+
+        send_dietary_options_more_of(user_id)  # Resend updated options if needed
 
 def modify_dietary_info(user_id, user_message):
    """
